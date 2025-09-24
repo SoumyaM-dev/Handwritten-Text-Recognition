@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OCR UI</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    input, button, select { font-size: 1rem; margin-right: 1rem; }
+    #preview { max-width: 250px; max-height: 250px; margin-top: 1rem; }
+    #result { margin-top: 1rem; font-weight: bold; font-size: 1.15rem;}
+  </style>
+</head>
+<body>
+  <h1>Handwritten OCR (Letter / Word)</h1>
+
+  <form id="upload-form" action="/predict" method="post" enctype="multipart/form-data">
+    <label for="mode">Choose Mode:</label>
+    <select name="mode" id="mode" required>
+      <option value="">--Select--</option>
+      <option value="letter">Letter</option>
+      <option value="word">Word</option>
+      <option value="text">Text</option>
+    </select>
+
+    <input type="file" name="file" id="file-input" accept="image/*" required>
+
+    <!-- <label style="margin-left:1rem;">
+      <input type="checkbox" name="use_gpt" value="true" id="use-gpt">
+      post process
+    </label> -->
+
+    <button type="submit">Predict</button>
+  </form>
+
+  <div>
+    <h3>Preview:</h3>
+    <img id="preview" src="" alt="Uploaded image preview">
+  </div>
+
+  <pre id="result"></pre>
+  
+  <script>
+    const form = document.getElementById("upload-form");
+    const preview = document.getElementById("preview");
+    const fileInput = document.getElementById("file-input");
+    const result = document.getElementById("result");
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => preview.src = e.target.result;
+      reader.readAsDataURL(file);
+    });
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      result.textContent = "Processing...";
+      const data = new FormData(form);
+      const res = await fetch("/predict", { method: "POST", body: data });
+      const json = await res.json();
+      if (json.prediction) {
+        result.textContent = "Prediction: \n\n" + json.prediction;
+      } else {
+        result.textContent = "Error: " + json.error;
+      }
+    });
+  </script>
+</body>
+</html>
